@@ -1,0 +1,17 @@
+bottom {
+ min-width: 100vw;
+ max-width: 100vw;
+ padding-block: 5px;
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ background-color: var(--color-light-gray-model-one);
+}
+
+.madeBy {
+ font-family: var(--font-poppins);
+ font-weight: 600;
+ letter-spacing: 5%;
+ color: var(--color-black);
+ font-size: 0.8em;
+}

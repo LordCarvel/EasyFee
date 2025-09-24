@@ -5,7 +5,7 @@ function Bottom () {
  return (
 
   <bottom>
-   
+   <p className={styles.madeBy}>Made by _vini.x_x © 2025</p>
   </bottom>
  )
 }
