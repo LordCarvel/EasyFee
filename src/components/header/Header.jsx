@@ -3,7 +3,7 @@ function Header () {
 
  return (
   <header>
-  
+   <p className={styles.logo}>Easy Fee</p>
   </header>
  )
 }
