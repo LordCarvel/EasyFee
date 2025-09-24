@@ -8,7 +8,7 @@ function Home () {
   <div className={styles.container}>
     <Header />
     <main>
-      
+      <p>sla</p>
     </main>
     <Bottom />
   </div>
