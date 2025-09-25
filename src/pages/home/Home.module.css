@@ -1,18 +1,121 @@
 .container {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  height: 100vh;
-  width: 100vw;
+ display: flex;
+ flex-direction: column;
+ justify-content: space-between;
+ align-items: center;
+ height: 100vh;
+ width: 100vw;
 }
 
 main {
  min-width: 85vw;
- max-width: 90vw;
- min-height: 85vh;
- max-height: 92vh;
+ max-width: 100vw;
+ min-height: 83vh;
+ max-height: 95vh;
  background-color: var(--color-white);
  border-radius: 5px;
- box-shadow: 0 1px 20px 0 rgba(0, 0, 0, 0.1), 0 1px 20px 0 rgba(0, 0, 0, 0.1);
+ box-shadow: 0 1px 5px 0 rgba(0, 0, 0, 0.1), 0 1px 5px 0 rgba(0, 0, 0, 0.1);
+ display: flex;
+}
+
+.areasContainer {
+ width: 30vw;
+ height: 100%;
+ display: flex;
+ flex-direction: column;
+ align-items: center;
+ padding-block: 10px;
+ align-items: flex-end;
+}
+
+.title {
+ font-family: var(--font-poppins);
+ font-weight: 600;
+ font-size: 2em;
+ color: var(--color-black);
+ margin-top: 10px;
+ letter-spacing: 5%;
+ white-space: nowrap;
+}
+
+.savedAreasContainer {
+ width: 20vw;
+ height: 85%;
+ border-radius: 5px;
+ margin-block: auto;
+}
+
+.savedAreasContainer button {
+ width: 20vw;
+ padding-block: 10px;
+ background-color: var(--color-yellow);
+ border: none;
+ font-family: var(--font-inter);
+ font-weight: 600;
+ font-size: 1.2em;
+ cursor: pointer;
+ transition: scale 0.2s ease-in-out;
+ border-radius: 7px;
+}
+
+.savedAreasContainer button:hover {
+ scale: 0.97;
+}
+
+.areaCardContainer {
+ width: 20vw;
+ height: 85%;
+ border-bottom: 2px solid var(--color-gray);
+ display: flex;
+ flex-direction: column;
+ margin-top: 10px;
+ overflow-y: scroll;
+ overflow-x: hidden;
+}
+
+.card {
+ width: 20vw;
+ padding: 10px;
+ border-radius: 3px;
+ display: flex;
+ justify-content: space-between; 
+ padding-left: 10px;
+ border-bottom: 1px solid var(--color-light-gray-model-two);
+}
+
+.color {
+ width: 15px;
+ height: 15px;
+ border-radius: 3px;
+ background-color: red;
+ display: inline-block;
+}
+
+.card p {
+ font-family: var(--font-roboto);
+ font-size: 1em;
+ color: var(--color-black);
+ white-space: nowrap;
+ overflow: hidden;
+ text-overflow: ellipsis;
+ gap: 15px;
+ display: flex;
+ align-items: center;
+}
+
+.card p span {
+ font-weight: 700;
+ letter-spacing: 5%;
+ font-size: 0.8em;
+}
+
+.card img {
+ width: 20px;
+ height: 20px;
+ cursor: pointer;
+ transition: scale 0.2s ease-in-out;
+}
+
+.card img:hover {
+ scale: 0.95;
 }
