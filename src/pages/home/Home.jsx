@@ -22,7 +22,9 @@ function Home() {
           </div>
         </div>
         <div className={styles.mapContainer}>
-          <input type="text" />
+          <input type="text" placeholder="Buscar endereço" id="searchLocate"/>
+
+          <div className={styles.map}></div>
         </div>
       </main>
       <Bottom />
