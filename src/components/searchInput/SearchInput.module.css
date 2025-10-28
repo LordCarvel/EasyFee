@@ -5,14 +5,15 @@
 }
 
 .searchInput {
-  width: 25vw;
-  padding: 6px;
+  width: 100%;
+  padding: 6px 34px 6px 6px; 
   border: 2px solid var(--color-gray);
   border-radius: 3px;
   font-size: 1.5em;
   color: var(--color-light-gray-model-two);
   font-family: var(--font-imb-plex-mono);
   letter-spacing: 5%;
+  background: var(--color-background, #fff);
 }
 
 .searchInput::placeholder {
@@ -24,5 +25,81 @@
 
 .searchInput:focus {
   outline: none;
-  box-shadow: none;
+  box-shadow: 0 0 0 2px rgba(119, 162, 232, 0.3);
+}
+
+.dotsLoader {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 20px;
+}
+
+.dotsLoader span {
+  width: 5px;
+  height: 5px;
+  background-color: var(--color-light-gray-model-two);
+  border-radius: 50%;
+  opacity: 0.6;
+  animation: blink 1.4s infinite ease-in-out both;
+}
+
+.dotsLoader span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.dotsLoader span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes blink {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+.suggestionsDropdown {
+  position: fixed;
+  background: var(--color-background, #fff);
+  border: 1px solid var(--color-gray);
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  z-index: 2000;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 2px;
+}
+
+.suggestionItem {
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-family: var(--font-imb-plex-mono);
+  font-size: 0.9em;
+  color: var(--color-light-gray-model-two);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.suggestionItem:hover {
+  background-color: rgba(119, 162, 232, 0.1);
+}
+
+.suggestionItem:last-child {
+  border-bottom: none;
+}
+
+.noResults {
+  padding: 10px 12px;
+  color: var(--color-light-gray-model-two);
+  font-size: 0.85em;
+  text-align: center;
+  font-family: var(--font-imb-plex-mono);
 }

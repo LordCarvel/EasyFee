@@ -1,7 +1,6 @@
-// src/components/AreaList/AreaList.jsx
 import React from "react";
 import styles from "./AreaList.module.css";
-import editIcon from "../../../public/Edit.png"; // ajuste o caminho conforme sua estrutura
+import editIcon from "../../../public/Edit.png";
 
 function AreaList({ areas, onCreate, onEdit }) {
   return (

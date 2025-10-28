@@ -1,4 +1,3 @@
-// src/components/AreaModal/AreaModal.jsx
 import React from "react";
 import {
   MapContainer,
@@ -29,7 +28,6 @@ function AreaModal({
 }) {
   if (!show) return null;
 
-  // Handler interno de clique no mapa
   function MapClickHandler() {
     useMapEvents({
       click(e) {

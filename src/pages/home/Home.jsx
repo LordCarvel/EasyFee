@@ -1,4 +1,3 @@
-// src/pages/Home/Home.jsx
 import { useState, useEffect, useRef } from "react";
 import styles from "./Home.module.css";
 import Header from "../../components/header/Header";
@@ -8,6 +7,8 @@ import SearchInput from "../../components/searchInput/SearchInput";
 import MapView from "../../components/mapView/MapView";
 import AreaList from "../../components/areaList/AreaList";
 import AreaModal from "../../components/areaModal/AreaModal";
+import { useSearch } from "../../hooks/UseSearch";
+import { mockSearch } from "../../hooks/MockSearch";
 
 function Home() {
   const position = [-26.790845466968143, -48.62679229044237];
@@ -25,9 +26,11 @@ function Home() {
   const [oldPolygon, setOldPolygon] = useState([]);
   const [pois, setPois] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const mapRef = useRef(null);
+
+  const { query, setQuery, results, loading: searchLoading } = useSearch(mockSearch);
+  const [selectedSearchPoint, setSelectedSearchPoint] = useState(null);
 
   async function fetchPOIs(lat, lon) {
     try {
@@ -116,6 +119,11 @@ function Home() {
     }
   };
 
+  const handleSelectSearchResult = (item) => {
+    const point = { lat: item.lat, lng: item.lng, name: item.name };
+    setSelectedSearchPoint(point);
+  };
+
   return (
     <div className={styles.container}>
       <Header />
@@ -128,8 +136,11 @@ function Home() {
 
         <div className={styles.mapSection}>
           <SearchInput
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            loading={searchLoading}
+            suggestions={results}
+            onSelect={handleSelectSearchResult}
           />
 
           <MapView
@@ -141,6 +152,7 @@ function Home() {
             points={points}
             setPoints={setPoints}
             mapRef={mapRef}
+            selectedSearchPoint={selectedSearchPoint}
           />
         </div>
       </main>

@@ -1,4 +1,3 @@
-// src/components/MapView/MapView.jsx
 import React, { useEffect } from "react";
 import {
   MapContainer,
@@ -6,10 +5,48 @@ import {
   Marker,
   Popup,
   Polygon,
+  Polyline,
   useMapEvents,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./MapView.module.css";
+
+function calcDistanceKm([lat1, lon1], [lat2, lon2]) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+}
+
+function CenterButton({ center }) {
+  const map = useMap();
+  return (
+    <button
+      onClick={() => map.flyTo(center, 16, { animate: true })}
+      style={{
+        position: "absolute",
+        top: 10,
+        right: 10,
+        zIndex: 1000,
+        background: "#fff",
+        border: "1px solid #ccc",
+        borderRadius: "6px",
+        padding: "6px 10px",
+        cursor: "pointer",
+        boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+      }}
+    >
+      Centralizar loja
+    </button>
+  );
+}
 
 function MapView({
   position,
@@ -20,8 +57,8 @@ function MapView({
   points,
   setPoints,
   mapRef,
+  selectedSearchPoint,
 }) {
-  // Atualiza POIs quando o mapa é movido
   function MapPOILoader() {
     useMapEvents({
       moveend: (e) => {
@@ -32,7 +69,6 @@ function MapView({
     return null;
   }
 
-  // Permite clicar no mapa para marcar pontos
   function MapClickHandler() {
     useMapEvents({
       click(e) {
@@ -42,8 +78,17 @@ function MapView({
     return null;
   }
 
+  function MapCenterUpdater({ point }) {
+    const map = useMap();
+    useEffect(() => {
+      if (point) {
+        map.flyTo([point.lat, point.lng], 17, { animate: true });
+      }
+    }, [point, map]);
+    return null;
+  }
+
   useEffect(() => {
-    // apenas para garantir que a ref pegue o mapa corretamente
     if (mapRef?.current) {
       mapRef.current.invalidateSize();
     }
@@ -62,12 +107,38 @@ function MapView({
           attribution="&copy; OpenStreetMap contributors"
         />
 
-        {/* Marcador principal */}
+        {/* Marcador da loja */}
         <Marker position={position}>
-          <Popup>Av. Eugênio Krause, 3075 - Armação, Penha - SC</Popup>
+          <Popup>📍 Loja - Ponto inicial</Popup>
         </Marker>
 
-        {/* Polígonos das áreas salvas */}
+        {/* Marcador do ponto buscado */}
+        {selectedSearchPoint && (
+          <>
+            <Marker position={[selectedSearchPoint.lat, selectedSearchPoint.lng]}>
+              <Popup>
+                {selectedSearchPoint.name}
+                <br />
+                Distância:{" "}
+                {calcDistanceKm(position, [
+                  selectedSearchPoint.lat,
+                  selectedSearchPoint.lng,
+                ]).toFixed(2)}{" "}
+                km
+              </Popup>
+            </Marker>
+
+            <Polyline
+              positions={[
+                position,
+                [selectedSearchPoint.lat, selectedSearchPoint.lng],
+              ]}
+              pathOptions={{ color: "orange", dashArray: "5,10" }}
+            />
+          </>
+        )}
+
+        {/* Polígonos das áreas */}
         {!loading &&
           areas.map(
             (area, idx) =>
@@ -84,7 +155,7 @@ function MapView({
               )
           )}
 
-        {/* POIs (restaurantes, etc.) */}
+        {/* POIs */}
         <MapPOILoader />
         {!loading &&
           pois.map((poi, idx) => (
@@ -95,8 +166,9 @@ function MapView({
             </Marker>
           ))}
 
-        {/* Captura de cliques no mapa */}
         <MapClickHandler />
+        <MapCenterUpdater point={selectedSearchPoint} />
+        <CenterButton center={position} />
       </MapContainer>
     </div>
   );
