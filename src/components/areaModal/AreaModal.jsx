@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Polygon,
-  Popup,
-  useMapEvents,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, Polygon, useLoadScript } from "@react-google-maps/api";
 import styles from "./AreaModal.module.css";
 
 function AreaModal({
@@ -29,11 +21,7 @@ function AreaModal({
   if (!show) return null;
 
   function MapClickHandler() {
-    useMapEvents({
-      click(e) {
-        setPoints((prev) => [...prev, [e.latlng.lat, e.latlng.lng]]);
-      },
-    });
+    // Handled by onClick on GoogleMap (below)
     return null;
   }
 
@@ -93,49 +81,55 @@ function AreaModal({
         {step === 2 && (
           <>
             <h2>Selecione os pontos da área</h2>
-            <MapContainer
-              center={oldPolygon.length > 0 ? oldPolygon[0] : position}
-              zoom={16}
-              style={{ height: "70vh", width: "100%", borderRadius: "1rem" }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png"
-                attribution="&copy; OpenStreetMap"
-              />
+            {(() => {
+              const { isLoaded, loadError } = useLoadScript({
+                googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY,
+                libraries: ["places"],
+              });
 
-              <MapClickHandler />
+              if (loadError) return <div>Erro ao carregar mapa</div>;
+              if (!isLoaded) return <div>Carregando mapa...</div>;
 
-              {/* Polígono antigo (em cinza) */}
-              {oldPolygon.length >= 3 && points.length === 0 && (
-                <Polygon
-                  positions={oldPolygon}
-                  pathOptions={{
-                    color: "#ccc",
-                    fillColor: "#ccc",
-                    fillOpacity: 0.2,
-                  }}
-                />
-              )}
+              const center = oldPolygon.length > 0 ? { lat: oldPolygon[0][0], lng: oldPolygon[0][1] } : { lat: position[0], lng: position[1] };
 
-              {/* Pontos novos clicados */}
-              {points.map((p, i) => (
-                <Marker key={i} position={p}>
-                  <Popup>Ponto {i + 1}</Popup>
-                </Marker>
-              ))}
+              return (
+                <GoogleMap
+                  center={center}
+                  zoom={16}
+                  mapContainerStyle={{ height: "70vh", width: "100%", borderRadius: "1rem" }}
+                  onClick={(e) => setPoints((prev) => [...prev, [e.latLng.lat(), e.latLng.lng()]])}
+                >
+                  {/* Polígono antigo (em cinza) */}
+                  {oldPolygon.length >= 3 && points.length === 0 && (
+                    <Polygon
+                      paths={oldPolygon.map((p) => ({ lat: p[0], lng: p[1] }))}
+                      options={{
+                        strokeColor: "#ccc",
+                        fillColor: "#ccc",
+                        fillOpacity: 0.2,
+                      }}
+                    />
+                  )}
 
-              {/* Polígono novo */}
-              {points.length >= 3 && (
-                <Polygon
-                  positions={points}
-                  pathOptions={{
-                    color: formColor || formData.cor,
-                    fillColor: formColor || formData.cor,
-                    fillOpacity: 0.4,
-                  }}
-                />
-              )}
-            </MapContainer>
+                  {/* Pontos novos clicados */}
+                  {points.map((p, i) => (
+                    <Marker key={i} position={{ lat: p[0], lng: p[1] }} />
+                  ))}
+
+                  {/* Polígono novo */}
+                  {points.length >= 3 && (
+                    <Polygon
+                      paths={points.map((p) => ({ lat: p[0], lng: p[1] }))}
+                      options={{
+                        strokeColor: formColor || formData.cor,
+                        fillColor: formColor || formData.cor,
+                        fillOpacity: 0.4,
+                      }}
+                    />
+                  )}
+                </GoogleMap>
+              );
+            })()}
 
             <div className={styles.modalActions}>
               <button onClick={handleConfirm}>Confirmar</button>

@@ -1,15 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  Polygon,
-  Polyline,
-  useMapEvents,
-  useMap,
-} from "react-leaflet";
-import "leaflet/dist/leaflet.css";
+import { GoogleMap, Marker, Polygon, Polyline, useLoadScript } from "@react-google-maps/api";
 import styles from "./MapView.module.css";
 
 function calcDistanceKm([lat1, lon1], [lat2, lon2]) {
@@ -24,11 +14,13 @@ function calcDistanceKm([lat1, lon1], [lat2, lon2]) {
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
-function CenterButton({ center }) {
-  const map = useMap();
+function CenterButton({ center, mapRef }) {
   return (
     <button
-      onClick={() => map.flyTo(center, 16, { animate: true })}
+      onClick={() => {
+        if (mapRef?.current) mapRef.current.panTo({ lat: center[0], lng: center[1] });
+        if (mapRef?.current) mapRef.current.setZoom(16);
+      }}
       style={{
         position: "absolute",
         top: 10,
@@ -48,21 +40,21 @@ function CenterButton({ center }) {
 }
 
 // Centraliza somente quando o ponto FINAL (rua + número) muda
-function MapCenterUpdater({ point }) {
-  const map = useMap();
+function MapCenterUpdater({ point, mapRef }) {
   const lastPoint = useRef(null);
 
   useEffect(() => {
     if (
       point &&
-      (!lastPoint.current ||
-        point.lat !== lastPoint.current.lat ||
-        point.lng !== lastPoint.current.lng)
+      (!lastPoint.current || point.lat !== lastPoint.current.lat || point.lng !== lastPoint.current.lng)
     ) {
-      map.flyTo([point.lat, point.lng], 17, { animate: true });
+      if (mapRef?.current) {
+        mapRef.current.panTo({ lat: point.lat, lng: point.lng });
+        mapRef.current.setZoom(17);
+      }
       lastPoint.current = point;
     }
-  }, [point, map]);
+  }, [point, mapRef]);
 
   return null;
 }
@@ -78,67 +70,46 @@ function MapView({
   mapRef,
   selectedSearchPoint, // <- só muda quando confirma rua + número
 }) {
-  function MapPOILoader() {
-    useMapEvents({
-      moveend: (e) => {
-        const center = e.target.getCenter();
-        fetchPOIs(center.lat, center.lng);
-      },
-    });
-    return null;
-  }
-
-  function MapClickHandler() {
-    useMapEvents({
-      click(e) {
-        setPoints((prev) => [...prev, [e.latlng.lat, e.latlng.lng]]);
-      },
-    });
-    return null;
-  }
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY,
+    libraries: ["places"],
+  });
 
   useEffect(() => {
-    if (mapRef?.current) mapRef.current.invalidateSize();
+    if (mapRef?.current && typeof mapRef.current === "object" && mapRef.current.panTo) {
+      // noop
+    }
   }, [mapRef]);
+
+  if (loadError) return <div>Erro ao carregar Google Maps</div>;
+  if (!isLoaded) return <div>Carregando mapa...</div>;
+
+  const center = { lat: position[0], lng: position[1] };
+
+  const onMapClick = (e) => {
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    setPoints((prev) => [...prev, [lat, lng]]);
+  };
 
   return (
     <div className={styles.mapContainer}>
-      <MapContainer
-        center={position}
+      <GoogleMap
+        mapContainerStyle={{ height: "75vh", width: "50vw", marginTop: "10px" }}
+        center={center}
         zoom={16}
-        style={{ height: "75vh", width: "50vw", marginTop: "10px" }}
-        whenCreated={(map) => (mapRef.current = map)}
+        onLoad={(map) => (mapRef.current = map)}
+        onClick={onMapClick}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-        />
-
-        <Marker position={position}>
-          <Popup>📍 Loja - Ponto inicial</Popup>
-        </Marker>
+        <Marker position={center} />
 
         {selectedSearchPoint && (
           <>
-            <Marker position={[selectedSearchPoint.lat, selectedSearchPoint.lng]}>
-              <Popup>
-                <b>{selectedSearchPoint.name}</b>
-                <br />
-                Distância:{" "}
-                {calcDistanceKm(position, [
-                  selectedSearchPoint.lat,
-                  selectedSearchPoint.lng,
-                ]).toFixed(2)}{" "}
-                km
-              </Popup>
-            </Marker>
+            <Marker position={{ lat: selectedSearchPoint.lat, lng: selectedSearchPoint.lng }} />
 
             <Polyline
-              positions={[
-                position,
-                [selectedSearchPoint.lat, selectedSearchPoint.lng],
-              ]}
-              pathOptions={{ color: "orange", dashArray: "6,8" }}
+              path={[center, { lat: selectedSearchPoint.lat, lng: selectedSearchPoint.lng }]}
+              options={{ strokeColor: "orange", strokeOpacity: 1, strokeWeight: 2 }}
             />
           </>
         )}
@@ -149,9 +120,9 @@ function MapView({
               area.pontos.length >= 3 && (
                 <Polygon
                   key={idx}
-                  positions={area.pontos}
-                  pathOptions={{
-                    color: area.cor,
+                  paths={area.pontos.map((p) => ({ lat: p[0], lng: p[1] }))}
+                  options={{
+                    strokeColor: area.cor,
                     fillColor: area.cor,
                     fillOpacity: 0.4,
                   }}
@@ -159,20 +130,14 @@ function MapView({
               )
           )}
 
-        <MapPOILoader />
         {!loading &&
           pois.map((poi, idx) => (
-            <Marker key={idx} position={[poi.lat, poi.lon]}>
-              <Popup>
-                <b>{poi.display_name}</b>
-              </Popup>
-            </Marker>
+            <Marker key={idx} position={{ lat: poi.lat, lng: poi.lon }} />
           ))}
 
-        <MapClickHandler />
-        <MapCenterUpdater point={selectedSearchPoint} />
-        <CenterButton center={position} />
-      </MapContainer>
+        <MapCenterUpdater point={selectedSearchPoint} mapRef={mapRef} />
+        <CenterButton center={position} mapRef={mapRef} />
+      </GoogleMap>
     </div>
   );
 }

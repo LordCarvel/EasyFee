@@ -1,5 +1,6 @@
 // src/pages/Home/Home.jsx
 import { useState, useEffect, useRef } from "react";
+import { useLoadScript } from "@react-google-maps/api";
 import styles from "./Home.module.css";
 import Header from "../../components/header/Header";
 import Bottom from "../../components/bottom/Bottom";
@@ -13,6 +14,12 @@ import { addressSearch } from "../../hooks/AdressSearch";
 
 function Home() {
   const position = [-26.790845466968143, -48.62679229044237];
+
+  // Load Google Maps JS API (Places + Geocoder)
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY,
+    libraries: ["places"],
+  });
 
   const [showModal, setShowModal] = useState(false);
   const [step, setStep] = useState(1);
@@ -56,6 +63,9 @@ function Home() {
     fetchPOIs(position[0], position[1]);
     return () => clearTimeout(timeout);
   }, []);
+
+  if (loadError) return <div>Erro ao carregar Google Maps: {String(loadError)}</div>;
+  if (!isLoaded) return <div>Carregando Google Maps...</div>;
 
   // handlers básicos de modal
   const handleChange = (e) => {
