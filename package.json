@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
+    "predeploy:local": "npm run build",
+    "deploy:local": "gh-pages -d dist",
+    "deploy": "echo \"This project is deployed automatically by GitHub Actions. To deploy locally run: npm run deploy:local\"",
     "lint": "eslint .",
     "preview": "vite preview"
   },
