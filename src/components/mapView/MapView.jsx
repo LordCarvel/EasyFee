@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -17,11 +17,10 @@ function calcDistanceKm([lat1, lon1], [lat2, lon2]) {
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
       Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+      Math.sin(dLon / 2) ** 2;
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
@@ -48,6 +47,26 @@ function CenterButton({ center }) {
   );
 }
 
+// Centraliza somente quando o ponto FINAL (rua + número) muda
+function MapCenterUpdater({ point }) {
+  const map = useMap();
+  const lastPoint = useRef(null);
+
+  useEffect(() => {
+    if (
+      point &&
+      (!lastPoint.current ||
+        point.lat !== lastPoint.current.lat ||
+        point.lng !== lastPoint.current.lng)
+    ) {
+      map.flyTo([point.lat, point.lng], 17, { animate: true });
+      lastPoint.current = point;
+    }
+  }, [point, map]);
+
+  return null;
+}
+
 function MapView({
   position,
   areas,
@@ -57,7 +76,7 @@ function MapView({
   points,
   setPoints,
   mapRef,
-  selectedSearchPoint,
+  selectedSearchPoint, // <- só muda quando confirma rua + número
 }) {
   function MapPOILoader() {
     useMapEvents({
@@ -78,20 +97,8 @@ function MapView({
     return null;
   }
 
-  function MapCenterUpdater({ point }) {
-    const map = useMap();
-    useEffect(() => {
-      if (point) {
-        map.flyTo([point.lat, point.lng], 17, { animate: true });
-      }
-    }, [point, map]);
-    return null;
-  }
-
   useEffect(() => {
-    if (mapRef?.current) {
-      mapRef.current.invalidateSize();
-    }
+    if (mapRef?.current) mapRef.current.invalidateSize();
   }, [mapRef]);
 
   return (
@@ -104,20 +111,18 @@ function MapView({
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
+          attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
         />
 
-        {/* Marcador da loja */}
         <Marker position={position}>
           <Popup>📍 Loja - Ponto inicial</Popup>
         </Marker>
 
-        {/* Marcador do ponto buscado */}
         {selectedSearchPoint && (
           <>
             <Marker position={[selectedSearchPoint.lat, selectedSearchPoint.lng]}>
               <Popup>
-                {selectedSearchPoint.name}
+                <b>{selectedSearchPoint.name}</b>
                 <br />
                 Distância:{" "}
                 {calcDistanceKm(position, [
@@ -133,12 +138,11 @@ function MapView({
                 position,
                 [selectedSearchPoint.lat, selectedSearchPoint.lng],
               ]}
-              pathOptions={{ color: "orange", dashArray: "5,10" }}
+              pathOptions={{ color: "orange", dashArray: "6,8" }}
             />
           </>
         )}
 
-        {/* Polígonos das áreas */}
         {!loading &&
           areas.map(
             (area, idx) =>
@@ -155,7 +159,6 @@ function MapView({
               )
           )}
 
-        {/* POIs */}
         <MapPOILoader />
         {!loading &&
           pois.map((poi, idx) => (

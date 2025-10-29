@@ -1,3 +1,4 @@
+// src/pages/Home/Home.jsx
 import { useState, useEffect, useRef } from "react";
 import styles from "./Home.module.css";
 import Header from "../../components/header/Header";
@@ -8,7 +9,7 @@ import MapView from "../../components/mapView/MapView";
 import AreaList from "../../components/areaList/AreaList";
 import AreaModal from "../../components/areaModal/AreaModal";
 import { useSearch } from "../../hooks/UseSearch";
-import { mockSearch } from "../../hooks/MockSearch";
+import { addressSearch } from "../../hooks/AdressSearch";
 
 function Home() {
   const position = [-26.790845466968143, -48.62679229044237];
@@ -29,14 +30,20 @@ function Home() {
 
   const mapRef = useRef(null);
 
-  const { query, setQuery, results, loading: searchLoading } = useSearch(mockSearch);
-  const [selectedSearchPoint, setSelectedSearchPoint] = useState(null);
+  // hook de busca (rua sem número)
+  const { query, setQuery, results, loading: searchLoading } = useSearch(addressSearch);
 
+  // controle do ponto selecionado e endereço detalhado
+  const [selectedSearchPoint, setSelectedSearchPoint] = useState(null);
+  const [selectedStreet, setSelectedStreet] = useState(null);
+  const [addressNumber, setAddressNumber] = useState("");
+
+  // buscar POIs (restaurantes, etc)
   async function fetchPOIs(lat, lon) {
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&q=restaurant&limit=12&lat=${lat}&lon=${lon}`
-      );
+      const targetUrl = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=restaurant&limit=12&lat=${lat}&lon=${lon}`;
+      const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      const res = await fetch(url);
       const data = await res.json();
       setPois(data);
     } catch (err) {
@@ -50,6 +57,7 @@ function Home() {
     return () => clearTimeout(timeout);
   }, []);
 
+  // handlers básicos de modal
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -63,7 +71,7 @@ function Home() {
     setEditingIndex(null);
     setOldPolygon([]);
   };
-  
+
   const handleConfirm = () => {
     if (editingIndex !== null) {
       const updatedAreas = [...areas];
@@ -119,9 +127,43 @@ function Home() {
     }
   };
 
+  // seleção da rua (NÃO centraliza ainda)
   const handleSelectSearchResult = (item) => {
-    const point = { lat: item.lat, lng: item.lng, name: item.name };
-    setSelectedSearchPoint(point);
+    setSelectedStreet(item);
+    setAddressNumber("");
+  };
+
+  // confirmação rua + número -> busca precisa
+  const handleConfirmAddress = async () => {
+    if (!selectedStreet) return;
+
+    const fullAddress =
+      `${selectedStreet.rua || selectedStreet.name} ${addressNumber || ""}, ` +
+      `${selectedStreet.cidade || "Penha"}, ${selectedStreet.estado || "SC"}, Brasil`;
+
+    try {
+      const preciseResults = await addressSearch(fullAddress);
+      if (preciseResults.length > 0) {
+        const best = preciseResults[0];
+        setSelectedSearchPoint({
+          lat: best.lat,
+          lng: best.lng,
+          name: best.name,
+        });
+      } else {
+        alert("Não foi possível encontrar esse número.");
+      }
+    } catch (err) {
+      console.error("Erro ao buscar endereço preciso:", err);
+    }
+  };
+
+  // limpar rua selecionada
+  const handleClearStreet = () => {
+    setSelectedStreet(null);
+    setAddressNumber("");
+    setQuery("");
+    setSelectedSearchPoint(null);
   };
 
   return (
@@ -141,6 +183,11 @@ function Home() {
             loading={searchLoading}
             suggestions={results}
             onSelect={handleSelectSearchResult}
+            selectedStreet={selectedStreet}
+            addressNumber={addressNumber}
+            onNumberChange={setAddressNumber}
+            onConfirmAddress={handleConfirmAddress}
+            onClearStreet={handleClearStreet}
           />
 
           <MapView
